@@ -16,8 +16,9 @@ RUN apt-get update \
 && apt-get install wget build-essential vim supervisor software-properties-common git libpq-dev -y \
 && apt-get install postgresql postgresql-contrib postgresql-server-dev-9.5 -y \
 && cd /opt/pg-strom/ \
-&& git clone https://github.com/pg-strom/devel.git pg_strom \
+&& git clone https://github.com/heterodb/pg-strom.git pg_strom \
 && cd pg_strom \
+&& git checkout STABLE_v1 \
 && make \
 && make install \
 && chmod +x /opt/pg-strom/entrypoint.sh \
