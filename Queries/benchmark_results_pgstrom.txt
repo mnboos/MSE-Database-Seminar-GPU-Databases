@@ -1,0 +1,115 @@
+                                                                                                                                                                                                                              QUERY PLAN                                                                                                                                                                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=9325116.40..9325116.42 rows=2 width=4) (actual time=104863.862..104863.864 rows=2 loops=1)
+   Group Key: cab_type_id
+   ->  Custom Scan (GpuPreAgg) on trips  (cost=4000.00..8723923.59 rows=256 width=8) (actual time=37167.453..104863.265 rows=2176 loops=1)
+         Reduction: Global
+         GPU Projection: id, cab_type_id, vendor_id, pickup_datetime, dropoff_datetime, store_and_fwd_flag, rate_code_id, pickup_longitude, pickup_latitude, dropoff_longitude, dropoff_latitude, passenger_count, trip_distance, fare_amount, extra, mta_tax, tip_amount, tolls_amount, ehail_fee, improvement_surcharge, total_amount, payment_type, trip_type, pickup_nyct2010_gid, dropoff_nyct2010_gid, pickup_location_id, dropoff_location_id, pickup, dropoff
+         Outer Scan: trips (actual time=31409.392..103972.855 rows=113965153 loops=1)
+ Planning time: 6.469 ms
+ Execution time: 105769.693 ms
+(8 rows)
+
+                                                                                                                                                                                                                              QUERY PLAN                                                                                                                                                                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=9325116.40..9325116.49 rows=7 width=10) (actual time=89940.940..89940.949 rows=10 loops=1)
+   Group Key: passenger_count
+   ->  Custom Scan (GpuPreAgg) on trips  (cost=4000.00..8733807.01 rows=12477 width=40) (actual time=29513.512..89938.894 rows=4366 loops=1)
+         Reduction: Local + Global
+         GPU Projection: id, cab_type_id, vendor_id, pickup_datetime, dropoff_datetime, store_and_fwd_flag, rate_code_id, pickup_longitude, pickup_latitude, dropoff_longitude, dropoff_latitude, passenger_count, trip_distance, fare_amount, extra, mta_tax, tip_amount, tolls_amount, ehail_fee, improvement_surcharge, total_amount, payment_type, trip_type, pickup_nyct2010_gid, dropoff_nyct2010_gid, pickup_location_id, dropoff_location_id, pickup, dropoff
+         Outer Scan: trips (actual time=24234.577..89065.810 rows=113965153 loops=1)
+ Planning time: 0.315 ms
+ Execution time: 90613.074 ms
+(8 rows)
+
+                                                             QUERY PLAN                                                              
+-------------------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=9949834.20..10093801.89 rows=11517415 width=12) (actual time=136629.587..136652.859 rows=10 loops=1)
+   Group Key: passenger_count, date_part('year'::text, pickup_datetime)
+   ->  Seq Scan on trips  (cost=0.00..9012757.50 rows=124943560 width=12) (actual time=24088.699..113439.875 rows=113965153 loops=1)
+ Planning time: 0.165 ms
+ Execution time: 136697.053 ms
+(5 rows)
+
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=12234725.39..12265961.28 rows=12494356 width=18) (actual time=168667.002..168667.051 rows=1427 loops=1)
+   Sort Key: (date_part('year'::text, pickup_datetime)), (count(*)) DESC
+   Sort Method: quicksort  Memory: 160kB
+   ->  HashAggregate  (cost=10574552.00..10761967.34 rows=12494356 width=18) (actual time=168641.498..168666.480 rows=1427 loops=1)
+         Group Key: passenger_count, date_part('year'::text, pickup_datetime), (trip_distance)::integer
+         ->  Seq Scan on trips  (cost=0.00..9325116.40 rows=124943560 width=18) (actual time=23625.177..134943.920 rows=113965153 loops=1)
+ Planning time: 0.194 ms
+ Execution time: 168715.663 ms
+(8 rows)
+
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.00..16.93 rows=10 width=237) (actual time=25193.268..26510.639 rows=10 loops=1)
+   ->  Seq Scan on trips  (cost=0.00..9949834.20 rows=5878550 width=237) (actual time=25193.258..26510.619 rows=10 loops=1)
+         Filter: ((pickup_longitude >= '-74.007511'::numeric) AND (pickup_longitude <= '-73.983479'::numeric) AND (pickup_latitude >= 40.7105) AND (pickup_latitude <= 40.731071))
+         Rows Removed by Filter: 1704578
+ Planning time: 0.549 ms
+ Execution time: 26510.695 ms
+(6 rows)
+
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=8231252.11..8231257.91 rows=2318 width=22) (actual time=303414.462..303414.462 rows=7 loops=1)
+   Sort Key: (date_part('dow'::text, pickup_datetime))
+   Sort Method: quicksort  Memory: 25kB
+   ->  HashAggregate  (cost=8231087.78..8231122.55 rows=2318 width=22) (actual time=303414.432..303414.446 rows=7 loops=1)
+         Group Key: date_part('dow'::text, pickup_datetime)
+         ->  Custom Scan (GpuScan) on trips  (cost=6105.79..8227568.62 rows=175958 width=22) (actual time=5566.125..225879.495 rows=90691057 loops=1)
+               Filter: (((fare_amount / trip_distance) >= '2'::numeric) AND ((fare_amount / trip_distance) <= '10'::numeric))
+               Rows Removed by Filter: 4958411
+               GPU Filter: ((trip_distance > '0'::numeric) AND (dropoff_datetime > pickup_datetime) AND (cab_type_id = 1))
+ Planning time: 0.372 ms
+ Execution time: 303618.543 ms
+(11 rows)
+
+                                                                                                                                          QUERY PLAN                                                                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=7595648.21..7595648.49 rows=110 width=22) (actual time=132042.340..132042.340 rows=7 loops=1)
+   Sort Key: (date_part('dow'::text, pickup_datetime))
+   Sort Method: quicksort  Memory: 25kB
+   ->  HashAggregate  (cost=7595642.83..7595644.48 rows=110 width=22) (actual time=132042.308..132042.314 rows=7 loops=1)
+         Group Key: date_part('dow'::text, pickup_datetime)
+         ->  Custom Scan (GpuScan) on trips  (cost=5944.03..7595477.25 rows=8279 width=22) (actual time=4669.952..124751.370 rows=8948779 loops=1)
+               Filter: (((fare_amount / trip_distance) >= '2'::numeric) AND ((fare_amount / trip_distance) <= '10'::numeric))
+               Rows Removed by Filter: 311472
+               GPU Filter: ((pickup_longitude >= '-74.007511'::numeric) AND (pickup_longitude <= '-73.983479'::numeric) AND (pickup_latitude >= 40.7105) AND (pickup_latitude <= 40.731071) AND (trip_distance > '0'::numeric) AND (dropoff_datetime > pickup_datetime) AND (cab_type_id = 1))
+ Planning time: 0.415 ms
+ Execution time: 132244.800 ms
+(11 rows)
+
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=8231252.11..8231257.91 rows=2318 width=22) (actual time=304442.266..304442.267 rows=7 loops=1)
+   Sort Key: (date_part('dow'::text, pickup_datetime))
+   Sort Method: quicksort  Memory: 25kB
+   ->  HashAggregate  (cost=8231087.78..8231122.55 rows=2318 width=22) (actual time=304442.230..304442.247 rows=7 loops=1)
+         Group Key: date_part('dow'::text, pickup_datetime)
+         ->  Custom Scan (GpuScan) on trips  (cost=6105.79..8227568.62 rows=175958 width=22) (actual time=5457.246..226952.156 rows=90691057 loops=1)
+               Filter: (((fare_amount / trip_distance) >= '2'::numeric) AND ((fare_amount / trip_distance) <= '10'::numeric))
+               Rows Removed by Filter: 4958411
+               GPU Filter: ((trip_distance > '0'::numeric) AND (dropoff_datetime > pickup_datetime) AND (cab_type_id = 1))
+ Planning time: 0.353 ms
+ Execution time: 304659.567 ms
+(11 rows)
+
+                                                                                                                                          QUERY PLAN                                                                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=7595648.21..7595648.49 rows=110 width=22) (actual time=134733.391..134733.392 rows=7 loops=1)
+   Sort Key: (date_part('dow'::text, pickup_datetime))
+   Sort Method: quicksort  Memory: 25kB
+   ->  HashAggregate  (cost=7595642.83..7595644.48 rows=110 width=22) (actual time=134733.372..134733.375 rows=7 loops=1)
+         Group Key: date_part('dow'::text, pickup_datetime)
+         ->  Custom Scan (GpuScan) on trips  (cost=5944.03..7595477.25 rows=8279 width=22) (actual time=5469.784..126463.642 rows=8948779 loops=1)
+               Filter: (((fare_amount / trip_distance) >= '2'::numeric) AND ((fare_amount / trip_distance) <= '10'::numeric))
+               Rows Removed by Filter: 311472
+               GPU Filter: ((pickup_longitude >= '-74.007511'::numeric) AND (pickup_longitude <= '-73.983479'::numeric) AND (pickup_latitude >= 40.7105) AND (pickup_latitude <= 40.731071) AND (trip_distance > '0'::numeric) AND (dropoff_datetime > pickup_datetime) AND (cab_type_id = 1))
+ Planning time: 0.463 ms
+ Execution time: 134940.043 ms
+(11 rows)
+
